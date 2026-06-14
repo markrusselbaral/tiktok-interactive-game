@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cat Fighting — Game Functions Reference</title>
+    <style>
+      :root {
+        --bg: #0b0d14;
+        --panel: #131722;
+        --panel-2: #1a2030;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #e6e8ee;
+        --muted: rgba(230, 232, 238, 0.6);
+        --accent: #ffd166;
+        --rose: #ff4d6d;
+        --orange: #ff8c42;
+        --white-cat: #a8dadc;
+        --code-bg: #0a0c12;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 32px 24px 80px;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        line-height: 1.55;
+      }
+      h1 {
+        font-size: 28px;
+        margin: 0 0 4px;
+        letter-spacing: 1px;
+      }
+      h1 .rose { color: var(--rose); }
+      .subtitle {
+        color: var(--muted);
+        margin-bottom: 28px;
+        font-size: 14px;
+      }
+      .container { max-width: 980px; margin: 0 auto; }
+
+      .roster {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .fighter {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        gap: 14px;
+        align-items: center;
+      }
+      .fighter img {
+        width: 96px;
+        height: 96px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #000;
+        border: 1px solid var(--border);
+      }
+      .fighter .name {
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 2px;
+      }
+      .fighter.orange .name { color: var(--orange); }
+      .fighter.white .name { color: var(--white-cat); }
+      .fighter .evolved { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+      .fighter .id { font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted); }
+
+      .fn {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 16px;
+      }
+      .fn.highlight {
+        border-color: var(--rose);
+        box-shadow: 0 0 0 1px rgba(255, 77, 109, 0.35), 0 8px 30px rgba(255, 77, 109, 0.08);
+      }
+      .fn-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+      }
+      .fn-name {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+      .fn-tag {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+      }
+      .fn-tag.rose { background: rgba(255, 77, 109, 0.15); color: var(--rose); }
+      .fn-desc { color: var(--muted); font-size: 13px; margin: 4px 0 10px; }
+      .fn-row {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        gap: 16px;
+        align-items: start;
+      }
+      .fn-row.no-art { grid-template-columns: 1fr; }
+      .fn-art {
+        background: var(--panel-2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px;
+        text-align: center;
+      }
+      .fn-art img {
+        width: 100%;
+        height: auto;
+        max-height: 180px;
+        object-fit: contain;
+        display: block;
+        border-radius: 6px;
+      }
+      .fn-art .caption {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 6px;
+        font-family: ui-monospace, monospace;
+      }
+      pre {
+        margin: 0;
+        background: var(--code-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 14px;
+        overflow-x: auto;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: #d8dce6;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .kw { color: #c792ea; }
+      .fn-kw { color: #82aaff; }
+      .str { color: #c3e88d; }
+      .num { color: #f78c6c; }
+      .com { color: #5a6378; font-style: italic; }
+      .prop { color: #ffcb6b; }
+
+      .section-title {
+        margin: 36px 0 12px;
+        font-size: 13px;
+        letter-spacing: 2px;
+        color: var(--muted);
+        text-transform: uppercase;
+      }
+      .section-title.first { margin-top: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Cat Fighting <span class="rose">🌹</span> Game Functions Reference</h1>
+      <div class="subtitle">
+        Source: <code>src/stores/game.js</code> — viewer-driven battle store. Listed below
+        starting with the rose / pick-a-fighter flow, then the remaining store actions.
+      </div>
+
+      <div class="roster">
+        <div class="fighter orange">
+          <img src="src/cats_action/cat1/orange_cat_memes.gif" alt="Orange cat meme" />
+          <div>
+            <div class="name">Tangerine</div>
+            <div class="evolved">evolved → Inferno Tangerine</div>
+            <div class="id">id: orange · side: a</div>
+          </div>
+        </div>
+        <div class="fighter white">
+          <img src="src/cats_action/cat2/white_cat_memes.gif" alt="White cat meme" />
+          <div>
+            <div class="name">Marshmallow</div>
+            <div class="evolved">evolved → Frostbite Marshmallow</div>
+            <div class="id">id: white · side: b</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title first">🌹 Rose → pick a fighter</div>
+
+      <div class="fn highlight">
+        <div class="fn-head">
+          <span class="fn-name">handleViewerGift(user, count, giftName, diamondCount)</span>
+          <span class="fn-tag rose">ROSE ENTRY POINT</span>
+        </div>
+        <div class="fn-desc">
+          Handles a viewer's gift (rose). First rose → picks a fighter for that viewer
+          (auto-balanced to the underdog side). Subsequent roses → fuel the ultimate,
+          rate-limited per viewer.
+        </div>
+        <div class="fn-row">
+          <pre><span class="fn-kw">handleViewerGift</span>(user, count, giftName, diamondCount) {
+  <span class="kw">if</span> (!user) <span class="kw">return</span>
+  <span class="kw">this</span>._pushRecent({
+    <span class="prop">kind</span>: <span class="str">'gift'</span>,
+    user,
+    <span class="prop">text</span>: <span class="str">`${giftName || 'gift'} ×${count}${diamondCount ? ` (${diamondCount}💎)` : ''}`</span>,
+  })
+
+  <span class="kw">let</span> side = <span class="kw">this</span>.viewerSides[user]
+  <span class="kw">if</span> (!side) {
+    <span class="com">// first rose → pick a fighter (auto-balance to the side with fewer fans)</span>
+    side = <span class="kw">this</span>._underdogSide()
+    <span class="kw">this</span>._assignSide(user, side)
+    <span class="kw">return</span>
+  }
+  <span class="com">// already a fan → roses fuel the ultimate (rate-limited)</span>
+  <span class="kw">if</span> (<span class="kw">this</span>._cooldownOk(<span class="kw">this</span>._ultimateCooldown, user, ULTIMATE_COOLDOWN_MS)) {
+    <span class="kw">this</span>.triggerUltimate(side)
+  }
+}</pre>
+          <div class="fn-art">
+            <img src="src/cats_action/cat1/orange_cat_memes.gif" alt="Orange cat meme" />
+            <div class="caption">orange_cat_memes.gif</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fn highlight">
+        <div class="fn-head">
+          <span class="fn-name">_underdogSide()</span>
+          <span class="fn-tag rose">SUPPORT</span>
+        </div>
+        <div class="fn-desc">Picks the side with fewer fans, used by the first-rose auto-balance.</div>
+        <div class="fn-row no-art">
+          <pre><span class="fn-kw">_underdogSide</span>() {
+  <span class="kw">return</span> <span class="kw">this</span>.live.fanCount.a &lt;= <span class="kw">this</span>.live.fanCount.b ? <span class="str">'a'</span> : <span class="str">'b'</span>
+}</pre>
+        </div>
+      </div>
+
+      <div class="fn highlight">
+        <div class="fn-head">
+          <span class="fn-name">_assignSide(user, side)</span>
+          <span class="fn-tag rose">SUPPORT</span>
+        </div>
+        <div class="fn-desc">
+          Assigns a viewer to a fighter side, updates fan counts, and emits a "joined team"
+          feed entry.
+        </div>
+        <div class="fn-row">
+          <pre><span class="fn-kw">_assignSide</span>(user, side) {
+  <span class="kw">if</span> (!user || !side) <span class="kw">return</span>
+  <span class="kw">const</span> previous = <span class="kw">this</span>.viewerSides[user]
+  <span class="kw">if</span> (previous === side) <span class="kw">return</span>
+  <span class="kw">if</span> (previous)
+    <span class="kw">this</span>.live.fanCount[previous] = Math.max(<span class="num">0</span>, <span class="kw">this</span>.live.fanCount[previous] - <span class="num">1</span>)
+  <span class="kw">this</span>.viewerSides[user] = side
+  <span class="kw">this</span>.live.fanCount[side] = (<span class="kw">this</span>.live.fanCount[side] || <span class="num">0</span>) + <span class="num">1</span>
+  <span class="kw">const</span> name = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a.cat.name : <span class="kw">this</span>.b.cat.name
+  <span class="kw">this</span>._pushRecent({ <span class="prop">kind</span>: <span class="str">'pick'</span>, user, <span class="prop">text</span>: <span class="str">`joined team ${name}`</span> })
+}</pre>
+          <div class="fn-art">
+            <img src="src/cats_action/cat2/white_cat_memes.gif" alt="White cat meme" />
+            <div class="caption">white_cat_memes.gif</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fn highlight">
+        <div class="fn-head">
+          <span class="fn-name">triggerUltimate(side)</span>
+          <span class="fn-tag rose">FIRED BY ROSES</span>
+        </div>
+        <div class="fn-desc">
+          Plays the meme overlay ultimate for the side. Triggered by repeat roses from a fan.
+        </div>
+        <div class="fn-row no-art">
+          <pre><span class="fn-kw">triggerUltimate</span>(side) {
+  <span class="kw">const</span> f = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  <span class="kw">if</span> (f.status === <span class="str">'eliminated'</span>) <span class="kw">return</span>
+  <span class="kw">const</span> name = f.evolved ? f.cat.evolvedName : f.cat.name
+  <span class="kw">this</span>.ultimate = {
+    side,
+    <span class="prop">key</span>: Date.now(),
+    name,
+    <span class="prop">ultName</span>: <span class="str">`${name.toUpperCase()} ULTIMATE!`</span>,
+    <span class="prop">meme</span>: f.cat.meme,
+    <span class="prop">color</span>: f.evolved ? f.cat.evolvedColor : f.cat.color,
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="section-title">Viewer comments &amp; targeting</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">handleViewerComment(user, text)</span></div>
+        <div class="fn-desc">
+          Parses chat. <code>"a kick"</code> → targeted skill. Bare side mention → join team.
+          Bare skill → use viewer's team (auto-joins underdog if none).
+        </div>
+        <pre><span class="fn-kw">handleViewerComment</span>(user, text) {
+  <span class="kw">if</span> (!user) <span class="kw">return</span>
+  <span class="kw">const</span> trimmed = String(text || <span class="str">''</span>).trim()
+  <span class="kw">this</span>._pushRecent({ <span class="prop">kind</span>: <span class="str">'comment'</span>, user, <span class="prop">text</span>: trimmed })
+
+  <span class="kw">const</span> hinted = detectSide(trimmed)
+  <span class="kw">const</span> skillAmount = detectSkill(trimmed)
+
+  <span class="kw">if</span> (hinted &amp;&amp; skillAmount) {
+    <span class="kw">if</span> (<span class="kw">this</span>._cooldownOk(<span class="kw">this</span>._skillCooldown, user, SKILL_COOLDOWN_MS)) {
+      <span class="kw">this</span>.addScore(hinted, skillAmount)
+    }
+    <span class="kw">return</span>
+  }
+  <span class="kw">if</span> (hinted) { <span class="kw">this</span>._assignSide(user, hinted); <span class="kw">return</span> }
+  <span class="kw">if</span> (skillAmount) {
+    <span class="kw">let</span> side = <span class="kw">this</span>.viewerSides[user]
+    <span class="kw">if</span> (!side) {
+      <span class="kw">this</span>._assignSide(user, <span class="kw">this</span>._underdogSide())
+      side = <span class="kw">this</span>.viewerSides[user]
+    }
+    <span class="kw">if</span> (<span class="kw">this</span>._cooldownOk(<span class="kw">this</span>._skillCooldown, user, SKILL_COOLDOWN_MS)) {
+      <span class="kw">this</span>.addScore(side, skillAmount)
+    }
+  }
+}</pre>
+      </div>
+
+      <div class="section-title">Combat actions</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">addScore(side, amount)</span></div>
+        <div class="fn-desc">Applies damage, picks attack animation (punch / kick / combo), and triggers a delayed hurt reaction on the opponent.</div>
+        <pre><span class="fn-kw">addScore</span>(side, amount) {
+  <span class="kw">const</span> f = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  <span class="kw">if</span> (f.status === <span class="str">'eliminated'</span>) <span class="kw">return</span>
+  f.score += amount
+  <span class="kw">this</span>.flash = { side, amount, <span class="prop">key</span>: Date.now() }
+  <span class="kw">const</span> type = amount &gt;= <span class="num">10</span> ? <span class="str">'combo'</span> : amount &gt;= <span class="num">5</span> ? <span class="str">'kick'</span> : <span class="str">'punch'</span>
+  <span class="kw">this</span>.attack[side] = { <span class="prop">key</span>: Date.now(), type }
+  <span class="kw">const</span> other = side === <span class="str">'a'</span> ? <span class="str">'b'</span> : <span class="str">'a'</span>
+  setTimeout(() =&gt; { <span class="kw">this</span>.hurt[other] = Date.now() }, <span class="num">180</span>)
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">executeUltimateFollowup(side)</span></div>
+        <div class="fn-desc">Dramatic on-stage combo after the meme overlay exits: punch → kick → punch → kick → finishing combo.</div>
+        <pre><span class="fn-kw">executeUltimateFollowup</span>(side) {
+  <span class="kw">const</span> f = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  <span class="kw">if</span> (f.status === <span class="str">'eliminated'</span>) <span class="kw">return</span>
+  <span class="kw">const</span> sequence = [
+    { <span class="prop">delay</span>: <span class="num">50</span>,   <span class="prop">amount</span>: <span class="num">3</span> },   <span class="com">// punch</span>
+    { <span class="prop">delay</span>: <span class="num">380</span>,  <span class="prop">amount</span>: <span class="num">5</span> },   <span class="com">// kick</span>
+    { <span class="prop">delay</span>: <span class="num">760</span>,  <span class="prop">amount</span>: <span class="num">3</span> },   <span class="com">// punch</span>
+    { <span class="prop">delay</span>: <span class="num">1140</span>, <span class="prop">amount</span>: <span class="num">5</span> },   <span class="com">// kick</span>
+    { <span class="prop">delay</span>: <span class="num">1600</span>, <span class="prop">amount</span>: <span class="num">12</span> },  <span class="com">// combo finisher</span>
+  ]
+  sequence.forEach(({ delay, amount }) =&gt; {
+    setTimeout(() =&gt; {
+      <span class="kw">if</span> (f.status === <span class="str">'eliminated'</span>) <span class="kw">return</span>
+      <span class="kw">this</span>.addScore(side, amount)
+    }, delay)
+  })
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">clearUltimate()</span></div>
+        <div class="fn-desc">Clears the ultimate overlay and chains into the followup combo.</div>
+        <pre><span class="fn-kw">clearUltimate</span>() {
+  <span class="kw">const</span> side = <span class="kw">this</span>.ultimate?.side
+  <span class="kw">this</span>.ultimate = <span class="kw">null</span>
+  <span class="kw">if</span> (side) <span class="kw">this</span>.executeUltimateFollowup(side)
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">revive(side)</span></div>
+        <div class="fn-desc">Restores an eliminated fighter to fighting status.</div>
+        <pre><span class="fn-kw">revive</span>(side) {
+  <span class="kw">const</span> f = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  f.status = <span class="str">'fighting'</span>
+  f.score = Math.max(f.score, <span class="num">1</span>)
+  <span class="kw">this</span>.lastEvent = { <span class="prop">type</span>: <span class="str">'revive'</span>, side, <span class="prop">key</span>: Date.now() }
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">evolve(side)</span></div>
+        <div class="fn-desc">Toggles a fighter into their evolved form (e.g., Tangerine → Inferno Tangerine).</div>
+        <pre><span class="fn-kw">evolve</span>(side) {
+  <span class="kw">const</span> f = side === <span class="str">'a'</span> ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  f.evolved = !f.evolved
+  <span class="kw">this</span>.lastEvent = { <span class="prop">type</span>: <span class="str">'evolve'</span>, side, <span class="prop">key</span>: Date.now() }
+}</pre>
+      </div>
+
+      <div class="section-title">Round flow</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">startTimer() / stopTimer()</span></div>
+        <div class="fn-desc">Per-second countdown that holds until the first point is scored.</div>
+        <pre><span class="fn-kw">startTimer</span>() {
+  <span class="kw">this</span>.stopTimer()
+  <span class="kw">this</span>._timer = setInterval(() =&gt; {
+    <span class="kw">if</span> (!<span class="kw">this</span>.roundActive) <span class="kw">return</span>
+    <span class="kw">if</span> (<span class="kw">this</span>.a.score === <span class="num">0</span> &amp;&amp; <span class="kw">this</span>.b.score === <span class="num">0</span>) <span class="kw">return</span>
+    <span class="kw">if</span> (<span class="kw">this</span>.timeLeft &gt; <span class="num">0</span>) <span class="kw">this</span>.timeLeft -= <span class="num">1</span>
+    <span class="kw">else</span> <span class="kw">this</span>.endRound()
+  }, <span class="num">1000</span>)
+}
+
+<span class="fn-kw">stopTimer</span>() {
+  <span class="kw">if</span> (<span class="kw">this</span>._timer) { clearInterval(<span class="kw">this</span>._timer); <span class="kw">this</span>._timer = <span class="kw">null</span> }
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">endRound()</span></div>
+        <div class="fn-desc">Scores the round, eliminates the loser, queues the winner-highlight video.</div>
+        <pre><span class="fn-kw">endRound</span>() {
+  <span class="kw">if</span> (!<span class="kw">this</span>.roundActive) <span class="kw">return</span>
+  <span class="kw">this</span>.roundActive = <span class="kw">false</span>
+  <span class="kw">const</span> aWins = <span class="kw">this</span>.a.score &gt;= <span class="kw">this</span>.b.score
+  <span class="kw">const</span> winner = aWins ? <span class="kw">this</span>.a : <span class="kw">this</span>.b
+  <span class="kw">const</span> loser  = aWins ? <span class="kw">this</span>.b : <span class="kw">this</span>.a
+  <span class="kw">const</span> winnerSide = aWins ? <span class="str">'a'</span> : <span class="str">'b'</span>
+  <span class="kw">const</span> loserSide  = aWins ? <span class="str">'b'</span> : <span class="str">'a'</span>
+  winner.status = <span class="str">'winner'</span>
+  loser.status  = <span class="str">'eliminated'</span>
+  <span class="kw">this</span>.eliminated.push(loser.cat.id)
+  <span class="kw">this</span>.lastEvent = { <span class="prop">type</span>: <span class="str">'win'</span>, <span class="prop">side</span>: winnerSide, <span class="prop">key</span>: Date.now() }
+  setTimeout(() =&gt; {
+    <span class="kw">this</span>.lastEvent = { <span class="prop">type</span>: <span class="str">'eliminate'</span>, <span class="prop">side</span>: loserSide, <span class="prop">key</span>: Date.now() }
+  }, <span class="num">250</span>)
+  <span class="kw">if</span> (winner.cat.video) {
+    <span class="kw">this</span>.winnerHighlight = {
+      <span class="prop">side</span>: winnerSide, <span class="prop">key</span>: Date.now(),
+      <span class="prop">name</span>: winner.evolved ? winner.cat.evolvedName : winner.cat.name,
+      <span class="prop">video</span>: winner.cat.video,
+      <span class="prop">color</span>: winner.evolved ? winner.cat.evolvedColor : winner.cat.color,
+    }
+  }
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">clearWinnerHighlight()</span></div>
+        <div class="fn-desc">Dismisses the winner-highlight video overlay.</div>
+        <pre><span class="fn-kw">clearWinnerHighlight</span>() { <span class="kw">this</span>.winnerHighlight = <span class="kw">null</span> }</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">nextRound()</span></div>
+        <div class="fn-desc">
+          Brings in the next challenger from the queue (recycling eliminated cats if empty),
+          replaces the loser slot, resets scores and fan counts.
+        </div>
+        <pre><span class="fn-kw">nextRound</span>() {
+  <span class="kw">this</span>.winnerHighlight = <span class="kw">null</span>
+  <span class="kw">let</span> nextId = <span class="kw">null</span>
+  <span class="kw">while</span> (<span class="kw">this</span>.queue.length) {
+    <span class="kw">const</span> candidate = <span class="kw">this</span>.queue.shift()
+    <span class="kw">if</span> (!<span class="kw">this</span>.eliminated.includes(candidate)) { nextId = candidate; <span class="kw">break</span> }
+  }
+  <span class="kw">if</span> (!nextId) {
+    <span class="kw">const</span> pool = <span class="kw">this</span>.roster.map((c) =&gt; c.id)
+      .filter((id) =&gt; id !== <span class="kw">this</span>.a.cat.id &amp;&amp; id !== <span class="kw">this</span>.b.cat.id)
+    <span class="kw">if</span> (pool.length) {
+      <span class="kw">this</span>.eliminated = []
+      <span class="kw">this</span>.queue = pool.slice(<span class="num">1</span>)
+      nextId = pool[<span class="num">0</span>]
+    }
+  }
+  <span class="com">// …replace loser slot with challenger, reset round state, _resetFanship()</span>
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">setRoundDuration(seconds)</span></div>
+        <div class="fn-desc">Sets the round timer length; updates the active timer if a round is running.</div>
+        <pre><span class="fn-kw">setRoundDuration</span>(seconds) {
+  <span class="kw">this</span>.roundDuration = seconds
+  <span class="kw">if</span> (<span class="kw">this</span>.roundActive) <span class="kw">this</span>.timeLeft = seconds
+}</pre>
+      </div>
+
+      <div class="section-title">Live (TikTok) integration</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">connectLive(username)</span></div>
+        <div class="fn-desc">Opens a WebSocket to the bridge server with the supplied TikTok username.</div>
+        <pre><span class="fn-kw">connectLive</span>(username) {
+  <span class="kw">const</span> trimmed = String(username || <span class="str">''</span>).replace(<span class="str">/^@/</span>, <span class="str">''</span>).trim()
+  <span class="kw">if</span> (!trimmed) {
+    <span class="kw">this</span>.live.status = <span class="str">'error'</span>
+    <span class="kw">this</span>.live.error  = <span class="str">'Enter a TikTok username'</span>
+    <span class="kw">return</span>
+  }
+  <span class="kw">this</span>.disconnectLive()
+  <span class="kw">this</span>.live.username = trimmed
+  <span class="kw">this</span>.live.status = <span class="str">'connecting'</span>
+  <span class="kw">const</span> url = <span class="str">`${this.live.bridgeUrl}/?username=${encodeURIComponent(trimmed)}`</span>
+  <span class="kw">const</span> ws = <span class="kw">new</span> WebSocket(url)
+  <span class="kw">this</span>._ws = ws
+  ws.addEventListener(<span class="str">'message'</span>, (m) =&gt; {
+    <span class="kw">try</span> { <span class="kw">this</span>._handleLiveEvent(JSON.parse(m.data)) } <span class="kw">catch</span> {}
+  })
+  ws.addEventListener(<span class="str">'close'</span>, () =&gt; { <span class="kw">if</span> (<span class="kw">this</span>.live.status !== <span class="str">'error'</span>) <span class="kw">this</span>.live.status = <span class="str">'closed'</span> })
+  ws.addEventListener(<span class="str">'error'</span>, () =&gt; { <span class="kw">this</span>.live.status = <span class="str">'error'</span> })
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">disconnectLive()</span></div>
+        <div class="fn-desc">Closes the bridge WebSocket and resets live status to idle.</div>
+        <pre><span class="fn-kw">disconnectLive</span>() {
+  <span class="kw">if</span> (<span class="kw">this</span>._ws) { <span class="kw">try</span> { <span class="kw">this</span>._ws.close() } <span class="kw">catch</span> {}; <span class="kw">this</span>._ws = <span class="kw">null</span> }
+  <span class="kw">this</span>.live.status = <span class="str">'idle'</span>
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">_handleLiveEvent(evt)</span></div>
+        <div class="fn-desc">Routes inbound bridge events: connected / disconnected / error / comment / gift.</div>
+        <pre><span class="fn-kw">_handleLiveEvent</span>(evt) {
+  <span class="kw">switch</span> (evt.type) {
+    <span class="kw">case</span> <span class="str">'connected'</span>:    <span class="kw">this</span>.live.status = <span class="str">'connected'</span>; <span class="kw">break</span>
+    <span class="kw">case</span> <span class="str">'disconnected'</span>:
+    <span class="kw">case</span> <span class="str">'streamEnd'</span>:    <span class="kw">this</span>.live.status = <span class="str">'closed'</span>; <span class="kw">break</span>
+    <span class="kw">case</span> <span class="str">'error'</span>:        <span class="kw">this</span>.live.status = <span class="str">'error'</span>; <span class="kw">break</span>
+    <span class="kw">case</span> <span class="str">'comment'</span>:      <span class="kw">this</span>.handleViewerComment(evt.user, evt.text); <span class="kw">break</span>
+    <span class="kw">case</span> <span class="str">'gift'</span>:         <span class="kw">this</span>.handleViewerGift(evt.user, evt.count || <span class="num">1</span>, evt.giftName, evt.diamondCount); <span class="kw">break</span>
+  }
+}</pre>
+      </div>
+
+      <div class="section-title">Internal helpers</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">_cooldownOk(map, user, ms)</span></div>
+        <div class="fn-desc">Per-user rate limiter shared by skill and ultimate.</div>
+        <pre><span class="fn-kw">_cooldownOk</span>(map, user, ms) {
+  <span class="kw">const</span> now = Date.now()
+  <span class="kw">const</span> last = map[user] || <span class="num">0</span>
+  <span class="kw">if</span> (now - last &lt; ms) <span class="kw">return</span> <span class="kw">false</span>
+  map[user] = now
+  <span class="kw">return</span> <span class="kw">true</span>
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">_resetFanship()</span></div>
+        <div class="fn-desc">Wipes viewer→side map, fan counts, and cooldowns when a new round begins.</div>
+        <pre><span class="fn-kw">_resetFanship</span>() {
+  <span class="kw">this</span>.viewerSides = {}
+  <span class="kw">this</span>.live.fanCount = { <span class="prop">a</span>: <span class="num">0</span>, <span class="prop">b</span>: <span class="num">0</span> }
+  <span class="kw">this</span>._skillCooldown = {}
+  <span class="kw">this</span>._ultimateCooldown = {}
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">_pushRecent(entry)</span></div>
+        <div class="fn-desc">Prepends an event to the live feed (capped at MAX_RECENT_EVENTS).</div>
+        <pre><span class="fn-kw">_pushRecent</span>(entry) {
+  <span class="kw">this</span>.live.recent.unshift({ <span class="prop">key</span>: Date.now() + Math.random(), ...entry })
+  <span class="kw">if</span> (<span class="kw">this</span>.live.recent.length &gt; MAX_RECENT_EVENTS) {
+    <span class="kw">this</span>.live.recent.length = MAX_RECENT_EVENTS
+  }
+}</pre>
+      </div>
+
+      <div class="section-title">Module-level helpers</div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">detectSide(text)</span></div>
+        <div class="fn-desc">Maps free-text to side <code>'a'</code> / <code>'b'</code> via SIDE_HINTS (orange/tangerine/inferno → a, white/marshmallow/frostbite → b).</div>
+        <pre><span class="kw">function</span> <span class="fn-kw">detectSide</span>(text) {
+  <span class="kw">const</span> lower = String(text || <span class="str">''</span>).toLowerCase()
+  <span class="kw">for</span> (<span class="kw">const</span> side <span class="kw">of</span> [<span class="str">'a'</span>, <span class="str">'b'</span>]) {
+    <span class="kw">for</span> (<span class="kw">const</span> hint <span class="kw">of</span> SIDE_HINTS[side]) {
+      <span class="kw">const</span> re = <span class="kw">new</span> RegExp(<span class="str">`(?:^|[^a-z])${hint}(?:[^a-z]|$)`</span>, <span class="str">'i'</span>)
+      <span class="kw">if</span> (re.test(lower)) <span class="kw">return</span> side
+    }
+  }
+  <span class="kw">return</span> <span class="kw">null</span>
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">detectSkill(text)</span></div>
+        <div class="fn-desc">Maps a comment to skill damage: combo/super/special → 10, kick/sweep → 5, punch/jab/hit/smack → 3.</div>
+        <pre><span class="kw">function</span> <span class="fn-kw">detectSkill</span>(text) {
+  <span class="kw">for</span> (<span class="kw">const</span> { re, amount } <span class="kw">of</span> SKILL_PATTERNS) {
+    <span class="kw">if</span> (re.test(text)) <span class="kw">return</span> amount
+  }
+  <span class="kw">return</span> <span class="kw">null</span>
+}</pre>
+      </div>
+
+      <div class="fn">
+        <div class="fn-head"><span class="fn-name">makeFighter(cat)</span></div>
+        <div class="fn-desc">Factory for a fresh fighter slot.</div>
+        <pre><span class="kw">function</span> <span class="fn-kw">makeFighter</span>(cat) {
+  <span class="kw">return</span> { cat, <span class="prop">score</span>: <span class="num">0</span>, <span class="prop">status</span>: <span class="str">'fighting'</span>, <span class="prop">evolved</span>: <span class="kw">false</span> }
+}</pre>
+      </div>
+    </div>
+  </body>
+</html>
